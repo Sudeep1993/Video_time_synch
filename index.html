@@ -1,142 +1,321 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Sync Tool - ArUco Stopwatch Synchronization</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArUco Stopwatch</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --panel: #0f0f1a;
+      --accent: #00ff9d;
+      --accent2: #00c9ff;
+      --dim: #1a1a2e;
+      --text: #e8f4f8;
+      --marker-size: 120px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── Landing Screen ─── */
+    #landing {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    #landing h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(1.8rem, 5vw, 3.5rem);
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+    }
+
+    #landing p {
+      color: #556;
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+
+    #start-btn {
+      margin-top: 1rem;
+      padding: 1.1rem 3.5rem;
+      font-family: 'Orbitron', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      background: transparent;
+      color: var(--accent);
+      border: 2px solid var(--accent);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: color 0.25s, box-shadow 0.25s;
+      clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    }
+
+    #start-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent);
+      transform: translateX(-105%);
+      transition: transform 0.25s ease;
+      z-index: -1;
+    }
+
+    #start-btn:hover {
+      color: #000;
+      box-shadow: 0 0 30px var(--accent);
+    }
+
+    #start-btn:hover::before {
+      transform: translateX(0);
+    }
+
+    .hint {
+      font-size: 0.78rem;
+      color: #334;
+      letter-spacing: 0.06em;
+      margin-top: -0.5rem;
+    }
+
+    /* ─── Fullscreen Timer ─── */
+    #fs-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #fff;
+      z-index: 9999;
+    }
+
+    #fs-overlay.active { display: block; }
+
+    #timer-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* ESC hint inside fullscreen */
+    #esc-hint {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: rgba(0,0,0,0.2);
+      letter-spacing: 0.1em;
+      pointer-events: none;
+      transition: opacity 2s;
+    }
+
+    /* Subtle grid bg on landing */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,255,157,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,255,157,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* Corner accents */
+    .corner {
+      position: fixed;
+      width: 60px;
+      height: 60px;
+      opacity: 0.3;
+    }
+    .corner.tl { top: 20px; left: 20px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+    .corner.tr { top: 20px; right: 20px; border-top: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+    .corner.bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--accent); border-left: 2px solid var(--accent); }
+    .corner.br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--accent); border-right: 2px solid var(--accent); }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🎬 Video Synchronization Tool</h1>
-            <p class="subtitle">ArUco Marker & Stopwatch-based Video Sync</p>
-        </header>
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
 
-        <nav class="tabs">
-            <button class="tab-btn active" data-tab="stopwatch">Live Stopwatch</button>
-            <button class="tab-btn" data-tab="sync">Video Sync</button>
-        </nav>
+  <div id="landing">
+    <h1>ARUCO STOPWATCH</h1>
+    <p>PRECISION VIDEO SYNCHRONIZATION TOOL</p>
+    <button id="start-btn" onclick="startTimer()">▶ START</button>
+    <p class="hint">Press ESC at any time to stop and exit fullscreen</p>
+  </div>
 
-        <!-- Tab 1: Live Stopwatch -->
-        <div id="stopwatch-tab" class="tab-content active">
-            <div class="stopwatch-container">
-                <div class="stopwatch-display" id="stopwatch-canvas-container">
-                    <canvas id="stopwatch-canvas" width="1200" height="800"></canvas>
-                </div>
-                <div class="stopwatch-controls">
-                    <button id="start-btn" class="btn btn-primary">Start</button>
-                    <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
-                    <button id="reset-btn" class="btn btn-danger">Reset</button>
-                </div>
-                <div class="info-box">
-                    <h3>📌 How to Use</h3>
-                    <ul>
-                        <li>Display this stopwatch on your screen while recording</li>
-                        <li>ArUco markers in corners help identify the stopwatch area</li>
-                        <li>Record with your cameras to capture the stopwatch</li>
-                        <li>Use the Video Sync tab to synchronize your recordings</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+  <!-- Fullscreen overlay -->
+  <div id="fs-overlay">
+    <canvas id="timer-canvas"></canvas>
+    <div id="esc-hint">ESC TO STOP</div>
+  </div>
 
-        <!-- Tab 2: Video Sync -->
-        <div id="sync-tab" class="tab-content">
-            <div class="upload-section">
-                <h2>Upload Videos</h2>
-                <div class="upload-grid">
-                    <div class="upload-box">
-                        <label for="video-a">Video A</label>
-                        <input type="file" id="video-a" accept="video/*" />
-                        <div id="preview-a" class="video-preview"></div>
-                    </div>
-                    <div class="upload-box">
-                        <label for="video-b">Video B</label>
-                        <input type="file" id="video-b" accept="video/*" />
-                        <div id="preview-b" class="video-preview"></div>
-                    </div>
-                </div>
-                <button id="process-btn" class="btn btn-primary btn-large" disabled>
-                    Process & Synchronize Videos
-                </button>
-            </div>
+  <script>
+    // ─── ArUco Marker Definitions (4x4 dictionary, IDs 0–3) ───────────────────
+    // Standard 4x4_50 dictionary patterns (6x6 grid with 4x4 data + 1px border)
+    const ARUCO_4X4 = {
+      0: [[0,1,1,1],[1,0,1,0],[0,0,0,0],[0,0,0,1]], // ID 0
+      1: [[1,0,0,1],[1,0,1,1],[0,1,0,1],[0,1,1,0]], // ID 1
+      2: [[1,1,0,0],[1,0,0,1],[0,1,1,0],[1,0,1,0]], // ID 2
+      3: [[0,0,1,0],[1,1,0,1],[0,0,0,1],[1,1,0,0]], // ID 3
+    };
 
-            <div id="processing-section" class="processing-section" style="display: none;">
-                <h2>Processing...</h2>
-                <div class="progress-bar">
-                    <div id="progress-fill" class="progress-fill"></div>
-                </div>
-                <p id="progress-text" class="progress-text">Initializing...</p>
-            </div>
+    function drawAruco(ctx, x, y, size, id) {
+      const bits = ARUCO_4X4[id];
+      const cell = size / 6;
+      // Black border
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(x, y, size, size);
+      // White outer border ring
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x + cell, y + cell, 4 * cell, 4 * cell);
+      // Draw data cells
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          ctx.fillStyle = bits[r][c] === 1 ? '#000000' : '#ffffff';
+          ctx.fillRect(x + (c + 1) * cell, y + (r + 1) * cell, cell, cell);
+        }
+      }
+    }
 
-            <div id="results-section" class="results-section" style="display: none;">
-                <h2>Synchronization Results</h2>
-                
-                <div class="results-grid">
-                    <div class="result-card">
-                        <h3>Video A Analysis</h3>
-                        <div id="video-a-stats"></div>
-                    </div>
-                    <div class="result-card">
-                        <h3>Video B Analysis</h3>
-                        <div id="video-b-stats"></div>
-                    </div>
-                </div>
+    // ─── Timer State ──────────────────────────────────────────────────────────
+    let startTime = null;
+    let elapsed = 0;
+    let rafId = null;
+    let running = false;
 
-                <div class="sync-info">
-                    <h3>Synchronization Info</h3>
-                    <div id="sync-stats"></div>
-                </div>
+    const overlay  = document.getElementById('fs-overlay');
+    const canvas   = document.getElementById('timer-canvas');
+    const ctx      = canvas.getContext('2d');
+    const escHint  = document.getElementById('esc-hint');
 
-                <div class="sync-visualization">
-                    <h3>Synchronized Playback</h3>
-                    <div class="video-players">
-                        <div class="player-container">
-                            <h4>Video A</h4>
-                            <video id="synced-video-a" controls></video>
-                            <p id="time-a" class="time-display">Time: 0.00s</p>
-                        </div>
-                        <div class="player-container">
-                            <h4>Video B</h4>
-                            <video id="synced-video-b" controls></video>
-                            <p id="time-b" class="time-display">Time: 0.00s</p>
-                        </div>
-                    </div>
-                    <div class="playback-controls">
-                        <button id="sync-play" class="btn btn-primary">▶ Play Synchronized</button>
-                        <button id="sync-pause" class="btn btn-secondary">⏸ Pause</button>
-                        <button id="sync-reset" class="btn btn-secondary">⏮ Reset</button>
-                    </div>
-                    <div class="sync-offset-display">
-                        <p id="offset-info">Sync Offset: <span id="offset-value">0.000s</span></p>
-                    </div>
-                </div>
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
 
-                <div class="timestamp-data">
-                    <h3>Detected Timestamps</h3>
-                    <div class="timestamp-grid">
-                        <div class="timestamp-column">
-                            <h4>Video A Timestamps</h4>
-                            <div id="timestamps-a" class="timestamp-list"></div>
-                        </div>
-                        <div class="timestamp-column">
-                            <h4>Video B Timestamps</h4>
-                            <div id="timestamps-b" class="timestamp-list"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    function pad(n, digits) { return String(n).padStart(digits, '0'); }
 
-        <footer>
-            <p>Built with ❤️ using ArUco markers and OCR technology | 
-            <a href="https://github.com/yourusername/video-sync-app" target="_blank">GitHub</a></p>
-        </footer>
-    </div>
+    function formatTime(ms) {
+      const totalMs = Math.floor(ms);
+      const mins    = Math.floor(totalMs / 60000);
+      const secs    = Math.floor((totalMs % 60000) / 1000);
+      const millis  = totalMs % 1000;
+      return `${pad(mins,2)}:${pad(secs,2)}.${pad(millis,3)}`;
+    }
 
-    <script src="https://cdn.jsdelivr.net/npm/opencv.js@4.8.0/opencv.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.0/dist/tesseract.min.js"></script>
-    <script src="app.js"></script>
+    function draw(timestamp) {
+      if (!running) return;
+      elapsed = timestamp - startTime;
+
+      resize();
+      const W = canvas.width;
+      const H = canvas.height;
+      const timeStr = formatTime(elapsed);
+
+      // White background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, H);
+
+      // ─── ArUco markers flush to corners ─────────────────────────────────
+      // Size = 25% of the shorter dimension, like Python's 200px on 800px height
+      const mSize = Math.floor(Math.min(W, H) * 0.375);
+
+      drawAruco(ctx, 0,          0,          mSize, 0); // TL
+      drawAruco(ctx, W - mSize,  0,          mSize, 1); // TR
+      drawAruco(ctx, 0,          H - mSize,  mSize, 2); // BL
+      drawAruco(ctx, W - mSize,  H - mSize,  mSize, 3); // BR
+
+      // ─── Timer at true center (HH:MM:SS.mmm) ────────────────────────────
+      // Safe zone to avoid overlapping markers
+      const safeX1 = mSize;
+      const safeX2 = W - mSize;
+      const safeY1 = mSize;
+      const safeY2 = H - mSize;
+      const safeW  = safeX2 - safeX1;
+      const safeH  = safeY2 - safeY1;
+
+      // Start at a large font size and shrink to fit the safe zone
+      let fontSize = Math.floor(Math.min(safeH * 2.0625, safeW * 0.4875));
+      ctx.font = `bold ${fontSize}px 'Courier New', Courier, monospace`;
+      while (fontSize > 8 && (ctx.measureText(timeStr).width > safeW * 0.98 || fontSize > safeH * 0.95)) {
+        fontSize -= 1;
+        ctx.font = `bold ${fontSize}px 'Courier New', Courier, monospace`;
+      }
+
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle    = '#000000';
+      ctx.fillText(timeStr, W / 2, H / 2);
+
+      rafId = requestAnimationFrame(draw);
+    }
+
+    // ─── Controls ─────────────────────────────────────────────────────────────
+    async function startTimer() {
+      overlay.classList.add('active');
+      running = true;
+
+      // Try native fullscreen
+      try { await overlay.requestFullscreen(); } catch(e) {}
+
+      resize();
+      startTime = performance.now();
+      rafId = requestAnimationFrame(draw);
+
+      // Hide ESC hint after 3s
+      escHint.style.opacity = '1';
+      setTimeout(() => { escHint.style.opacity = '0'; }, 3000);
+    }
+
+    function stopTimer() {
+      if (!running) return;
+      running = false;
+      cancelAnimationFrame(rafId);
+      overlay.classList.remove('active');
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      // Reset
+      elapsed   = 0;
+      startTime = null;
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && running) stopTimer();
+    });
+
+    // Also listen to fullscreenchange (browser ESC exits fullscreen before our listener)
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && running) stopTimer();
+    });
+
+    window.addEventListener('resize', () => { if (running) resize(); });
+  </script>
 </body>
 </html>
