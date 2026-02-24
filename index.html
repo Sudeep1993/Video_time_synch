@@ -240,32 +240,39 @@
       const H = canvas.height;
       const timeStr = formatTime(elapsed);
 
-      // White background
+      // Boundary thickness (in pixels)
+      const border = Math.floor(Math.min(W, H) * 0.06); // doubled from 3% → 6%
+
+      // Full white background
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, W, H);
+
+      // Draw inner working area (optional subtle background contrast)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(border, border, W - 2 * border, H - 2 * border);
 
       // ─── ArUco markers flush to corners ─────────────────────────────────
       // Size = 25% of the shorter dimension, like Python's 200px on 800px height
       const mSize = Math.floor(Math.min(W, H) * 0.375);
 
-      drawAruco(ctx, 0,          0,          mSize, 0); // TL
-      drawAruco(ctx, W - mSize,  0,          mSize, 1); // TR
-      drawAruco(ctx, 0,          H - mSize,  mSize, 2); // BL
-      drawAruco(ctx, W - mSize,  H - mSize,  mSize, 3); // BR
+      drawAruco(ctx, border, border, mSize, 0);
+      drawAruco(ctx, W - mSize - border, border, mSize, 1);
+      drawAruco(ctx, border, H - mSize - border, mSize, 2);
+      drawAruco(ctx, W - mSize - border, H - mSize - border, mSize, 3);
 
       // ─── Timer at true center (HH:MM:SS.mmm) ────────────────────────────
       // Safe zone to avoid overlapping markers
-      const safeX1 = mSize;
-      const safeX2 = W - mSize;
-      const safeY1 = mSize;
-      const safeY2 = H - mSize;
+      const safeX1 = mSize + border;
+      const safeX2 = W - mSize - border;
+      const safeY1 = mSize + border;
+      const safeY2 = H - mSize - border;
       const safeW  = safeX2 - safeX1;
       const safeH  = safeY2 - safeY1;
 
       // Start at a large font size and shrink to fit the safe zone
-      let fontSize = Math.floor(Math.min(safeH * 2.0625, safeW * 0.4875));
+      let fontSize = Math.floor(Math.min(safeH * 0.825, safeW * 0.195));
       ctx.font = `bold ${fontSize}px 'Courier New', Courier, monospace`;
-      while (fontSize > 8 && (ctx.measureText(timeStr).width > safeW * 0.98 || fontSize > safeH * 0.95)) {
+      while (fontSize > 8 && ctx.measureText(timeStr).width > safeW * 0.92) {
         fontSize -= 1;
         ctx.font = `bold ${fontSize}px 'Courier New', Courier, monospace`;
       }
