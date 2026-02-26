@@ -178,31 +178,15 @@
   </div>
 
   <script>
-    // ─── ArUco Marker Definitions (4x4 dictionary, IDs 0–3) ───────────────────
-    // Standard 4x4_50 dictionary patterns (6x6 grid with 4x4 data + 1px border)
-    const ARUCO_4X4 = {
-      0: [[0,1,1,1],[1,0,1,0],[0,0,0,0],[0,0,0,1]], // ID 0
-      1: [[1,0,0,1],[1,0,1,1],[0,1,0,1],[0,1,1,0]], // ID 1
-      2: [[1,1,0,0],[1,0,0,1],[0,1,1,0],[1,0,1,0]], // ID 2
-      3: [[0,0,1,0],[1,1,0,1],[0,0,0,1],[1,1,0,0]], // ID 3
-    };
+    // ─── ArUco Marker Images (loaded from uploaded SVG files) ──────────────────
+    const ARUCO_IMGS = [new Image(), new Image(), new Image(), new Image()];
+    ARUCO_IMGS[0].src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNiA2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyIgd2lkdGg9IjEwMG1tIiBoZWlnaHQ9IjEwMG1tIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiBmaWxsPSJibGFjayI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjEiIHk9IjEiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEuNSIgaGVpZ2h0PSIxIiB4PSIzIiB5PSIxIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjQiIHk9IjEiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMS41IiB4PSI0IiB5PSIxIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjIiIHk9IjIiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMSIgeD0iNCIgeT0iMiIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxLjUiIHg9IjQiIHk9IjIiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEuNSIgaGVpZ2h0PSIxIiB4PSIzIiB5PSIzIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEuNSIgeD0iMyIgeT0iMyIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4PSI0IiB5PSIzIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjMiIHk9IjQiIGZpbGw9IndoaXRlIj48L3JlY3Q+PC9zdmc+';
+    ARUCO_IMGS[1].src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNiA2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyIgd2lkdGg9IjEwMG1tIiBoZWlnaHQ9IjEwMG1tIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiBmaWxsPSJibGFjayI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxLjUiIGhlaWdodD0iMSIgeD0iMSIgeT0iMiIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxLjUiIHg9IjEiIHk9IjIiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEuNSIgaGVpZ2h0PSIxIiB4PSIyIiB5PSIyIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxLjUiIGhlaWdodD0iMSIgeD0iMyIgeT0iMiIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4PSI0IiB5PSIyIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEuNSIgeD0iNCIgeT0iMiIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4PSIxIiB5PSIzIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEuNSIgeD0iMSIgeT0iMyIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4PSI0IiB5PSIzIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjEiIHk9IjQiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMSIgeD0iMyIgeT0iNCIgZmlsbD0id2hpdGUiPjwvcmVjdD48L3N2Zz4=';
+    ARUCO_IMGS[2].src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNiA2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyIgd2lkdGg9IjEwMG1tIiBoZWlnaHQ9IjEwMG1tIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiBmaWxsPSJibGFjayI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxLjUiIGhlaWdodD0iMSIgeD0iMyIgeT0iMSIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxLjUiIHg9IjMiIHk9IjEiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMSIgeD0iNCIgeT0iMSIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxLjUiIHg9IjQiIHk9IjEiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEuNSIgaGVpZ2h0PSIxIiB4PSIzIiB5PSIyIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEuNSIgeD0iMyIgeT0iMiIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4PSI0IiB5PSIyIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjMiIHk9IjMiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEuNSIgaGVpZ2h0PSIxIiB4PSIxIiB5PSI0IiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjIiIHk9IjQiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMSIgeD0iNCIgeT0iNCIgZmlsbD0id2hpdGUiPjwvcmVjdD48L3N2Zz4=';
+    ARUCO_IMGS[3].src = 'data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgNiA2IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHNoYXBlLXJlbmRlcmluZz0iY3Jpc3BFZGdlcyIgd2lkdGg9IjEwMG1tIiBoZWlnaHQ9IjEwMG1tIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiBmaWxsPSJibGFjayI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjEiIHk9IjEiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMS41IiB4PSIxIiB5PSIxIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjQiIHk9IjEiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMS41IiB4PSI0IiB5PSIxIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIHg9IjEiIHk9IjIiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMSIgeD0iNCIgeT0iMiIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4PSIyIiB5PSIzIiBmaWxsPSJ3aGl0ZSI+PC9yZWN0PjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEuNSIgeD0iMiIgeT0iMyIgZmlsbD0id2hpdGUiPjwvcmVjdD48cmVjdCB3aWR0aD0iMS41IiBoZWlnaHQ9IjEiIHg9IjIiIHk9IjQiIGZpbGw9IndoaXRlIj48L3JlY3Q+PHJlY3Qgd2lkdGg9IjEiIGhlaWdodD0iMSIgeD0iMyIgeT0iNCIgZmlsbD0id2hpdGUiPjwvcmVjdD48L3N2Zz4=';
 
     function drawAruco(ctx, x, y, size, id) {
-      const bits = ARUCO_4X4[id];
-      const cell = size / 6;
-      // Black border
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(x, y, size, size);
-      // White outer border ring
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x + cell, y + cell, 4 * cell, 4 * cell);
-      // Draw data cells
-      for (let r = 0; r < 4; r++) {
-        for (let c = 0; c < 4; c++) {
-          ctx.fillStyle = bits[r][c] === 1 ? '#000000' : '#ffffff';
-          ctx.fillRect(x + (c + 1) * cell, y + (r + 1) * cell, cell, cell);
-        }
-      }
+      ctx.drawImage(ARUCO_IMGS[id], x, y, size, size);
     }
 
     // ─── Timer State ──────────────────────────────────────────────────────────
